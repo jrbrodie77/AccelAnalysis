@@ -19,3 +19,5 @@ sys.dont_write_bytecode = True
 from ni_vibration_lib import *
 
 ds = DataSet('vibedata.csv')
+
+print ds.data[0].esd_data

@@ -7,27 +7,22 @@ import numpy as np
 import math
 
 def calc_fft(signal):
-
-    fft = np.fft.rfft(signal)
+    times = signal[0]
+    sig = signal[1]
+    fft = np.fft.rfft(sig)
     fft /= len(fft)  # Normalize by length
-    freq_spacing = 1 / (times[-1] - times[0])
+    freq_spacing = 1.0 / (times[-1] - times[0])
     freqs = np.arange(len(fft)) * freq_spacing
 
     return np.vstack((freqs, fft))
 
+def calc_esd(fft_data):
+    esd=[]
 
-def fft_abs_norm(times, signal):
-    """Takes array of form [times, magnitudes] and returns [freq, magnitude] of signal FFT"""
+    esd.append(fft_data[0])
+    esd.append(fft_data[1]**2)
 
-    fft = np.fft.rfft(signal)
-    fft /= len(fft)  # Normalize by length
-    fft = np.absolute(fft)
-
-    freq_spacing = 1 / (times[-1] - times[0])
-    freqs = np.arange(len(fft)) * freq_spacing
-
-    return np.vstack((freqs, fft)).T
-
+    return np.array(esd, dtype='float32')
 
 def bin_spectrum(bin_spec, velocity_data):
     """Bins FFT lines, using power sum"""
@@ -49,6 +44,8 @@ def bin_spectrum(bin_spec, velocity_data):
     binned_spectrum = np.array(binned_spectrum)
 
     return binned_spectrum[1:]  # RMS of velocity, dump first bin
+
+
 
 
 def linear_bins(low=0, hi=200, inc=5):
@@ -112,27 +109,29 @@ class DataSeries:
         """
         self.name = ""
         self.time_data = []
-        self.freq_data = []
+        self.fft_data = []
+        self.esd_data = []
 
         if times.any():
             self.time_data.append(times)
             self.time_data.append(values)
             self.time_data = np.array(self.time_data)
-
-
+            self.fft_data = np.array(calc_fft(self.time_data))
+            self.esd_data = calc_esd(self.fft_data)
     def __str__(self):
         return str.format(" {0}: times({1}), data({2}) ", self.name, len(self.time_data[0]), len(self.time_data[1]))
 
 
-    def __calc_fft(times, signal):
-        """Takes array of form [times, magnitudes] and returns [freq, magnitude] of signal FFT"""
 
-        fft = np.fft.rfft(signal)
-        fft /= len(fft)  # Normalize by length
-        fft = np.absolute(fft)
 
-        freq_spacing = 1 / (times[-1] - times[0])
-        freqs = np.arange(len(fft)) * freq_spacing
-
-        return np.vstack((freqs, fft)).T
-
+# def fft_abs_norm(times, signal):
+#     """Takes array of form [times, magnitudes] and returns [freq, magnitude] of signal FFT"""
+#
+#     fft = np.fft.rfft(signal)
+#     fft /= len(fft)  # Normalize by length
+#     fft = np.absolute(fft)
+#
+#     freq_spacing = 1 / (times[-1] - times[0])
+#     freqs = np.arange(len(fft)) * freq_spacing
+#
+#     return np.vstack((freqs, fft)).T
