@@ -6,71 +6,79 @@ import pylab as py
 import numpy as np
 import math
 
-def calc_fft(signal):
+def calc_fft(signal, samp_rate=1):
     times = signal[0]
+    n = len(times)
     sig = signal[1]
-    fft = np.fft.rfft(sig)
-    fft /= len(fft)  # Normalize by length
-    freq_spacing = 1.0 / (times[-1] - times[0])
-    freqs = np.arange(len(fft)) * freq_spacing
+    fft = np.fft.rfft(sig)/n
+    freqs = np.fft.rfftfreq(n, 1.0/samp_rate)
 
-    return np.vstack((freqs, fft))
+    if n % 2:  # odd-length
+        fft[1:-1]=fft[1:]*2**0.5  #include last point
+    else:  # even-length
+        fft[1:-1]=fft[1:-1]*2**0.5 #exclude last point
 
-def calc_esd(fft_data):
-    esd=[]
+    return (freqs, fft)
 
-    esd.append(fft_data[0])
-    esd.append(fft_data[1]**2)
+def gen_test_tones(freqs=[256], samprate=1024, num_samps=1024):
+    """This generates a signal for our test case"""
+    times = np.arange(0, num_samps) * 1.0 / samprate
+    values = np.zeros(num_samps)
 
-    return np.array(esd, dtype='float32')
+    for freq in freqs:
+        values += [math.cos(num * 2 * math.pi * freq) for num in times]  #*2*freq
 
-def bin_spectrum(bin_spec, velocity_data):
-    """Bins FFT lines, using power sum"""
-
-    binned_keys = np.digitize(velocity_data[:, 0], bin_spec[:, 1], right=True)
-    binned_spectrum = {}
-
-    for index, bin_num in enumerate(binned_keys):
-        if bin_num < len(bin_spec):
-            freq = bin_spec[bin_num, 0]
-            if not binned_spectrum.has_key(freq):
-                binned_spectrum[freq] = 0
-
-            binned_spectrum[freq] += velocity_data[index, 1]
-
-    binned_spectrum = np.array([[k, v] for k, v in binned_spectrum.iteritems()])
-    binned_spectrum = binned_spectrum[binned_spectrum[:, 0].argsort()]
-    binned_spectrum = [[v[0], v[1] ** 0.5] for v in binned_spectrum]
-    binned_spectrum = np.array(binned_spectrum)
-
-    return binned_spectrum[1:]  # RMS of velocity, dump first bin
-
-
+    return (times, values)
 
 
 def linear_bins(low=0, hi=200, inc=5):
     """Returns array of lin. spaced frequency values for binning"""
     center_freq = np.arange(low, hi, inc)
     limit_freq = center_freq + inc / 2
-    bin_spec = np.array([center_freq, limit_freq]).T
+    bin_spec = np.array([center_freq, limit_freq])
     return bin_spec
 
+def calc_esd(fft_data, bin_spec=linear_bins()):
+    """Takes raw FFT data, returns binned energy spectral density in freq bins"""
+    esd=[]
+    esd.append(fft_data[0])
+    esd.append(np.abs(fft_data[1])**2)
+    esd=np.array(esd, dtype='float32')
+    #esd=bin_spectrum(esd, bin_spec)
 
-# In[3]:
+    return esd
 
-def gen_test_tones():
-    """This generates a signal for our test case"""
-    samprate = 1024
-    freqs = [4, 5, 6, 50]
 
-    u = np.arange(0, samprate) * 1.0 / samprate  #Generate 1 second of time data
-    y = np.zeros(len(u))
+def bin_spectrum(freq_data, bin_spec=linear_bins()):
+    """Bins FFT lines, using power sum"""
 
-    for freq in freqs:
-        print(freq)
-        y += [math.sin(num * 2 * math.pi * freq) for num in u]  #*2*freq
+    binned_keys = np.digitize(freq_data[0], bin_spec[1], right=True)
+    binned_spectrum = {}
 
-    return np.array([u, y]).T
+    for index, bin_num in enumerate(binned_keys):
+        if bin_num < bin_spec.shape[1]:
+            freq = bin_spec[0, bin_num]
+            if not binned_spectrum.has_key(freq):
+                binned_spectrum[freq] = 0
+
+            binned_spectrum[freq] += freq_data[1, index]
+
+    binned_spectrum = np.array([[k, v] for k, v in binned_spectrum.iteritems()])
+    binned_spectrum = binned_spectrum[binned_spectrum[:, 0].argsort()]
+    binned_spectrum = [[v[0], v[1]] for v in binned_spectrum]
+    binned_spectrum = np.array(binned_spectrum)
+
+    return binned_spectrum[:][1:]  # RMS of velocity, dump first bin
+
+
+
+
+
+def rms(vals):
+    return np.sqrt(np.mean(np.square(vals)))
+
+def rms_fft(fft):
+    return rms(abs(fft))/(2*(len(fft)-1))**0.5
 
 
 class DataSet:
@@ -111,6 +119,8 @@ class DataSeries:
         self.time_data = []
         self.fft_data = []
         self.esd_data = []
+        if type(times)!='NoneType':
+            times, values = np.array(times), np.array(values)
 
         if times.any():
             self.time_data.append(times)
@@ -118,20 +128,26 @@ class DataSeries:
             self.time_data = np.array(self.time_data)
             self.fft_data = np.array(calc_fft(self.time_data))
             self.esd_data = calc_esd(self.fft_data)
+
+
+
     def __str__(self):
         return str.format(" {0}: times({1}), data({2}) ", self.name, len(self.time_data[0]), len(self.time_data[1]))
 
+    @property
+    def fft_abs(self):
+        return np.abs(self.fft_data[1])
 
 
 
-# def fft_abs_norm(times, signal):
-#     """Takes array of form [times, magnitudes] and returns [freq, magnitude] of signal FFT"""
-#
-#     fft = np.fft.rfft(signal)
-#     fft /= len(fft)  # Normalize by length
-#     fft = np.absolute(fft)
-#
-#     freq_spacing = 1 / (times[-1] - times[0])
-#     freqs = np.arange(len(fft)) * freq_spacing
-#
-#     return np.vstack((freqs, fft)).T
+
+#a = [3,3,3,3,-3,-3,-3,-3]
+#a = [1,-1,1,-1,1,-1,1,-1]
+#a = [3,3,3,3,3,3,3,3]
+#b= [0,1,2,3,4,5,6,7]
+#ds1=DataSeries(b,a)
+#ds2 = gen_test_tones_8()
+
+#print(ds2.fft_abs)
+
+

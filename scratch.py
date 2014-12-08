@@ -20,4 +20,7 @@ from ni_vibration_lib import *
 
 ds = DataSet('vibedata.csv')
 
-print ds.data[0].esd_data
+#print(ds.data[0].esd_data.T)
+
+
+print bin_spectrum(ds.data[0].esd_data)
