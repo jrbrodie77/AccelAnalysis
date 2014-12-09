@@ -25,6 +25,7 @@ binned_spectrum2 = bin_spectrum(linear_bins(0, 200, 2.5), spectrum2)
 fig, axes = py.subplots(1, 2)
 # fig.set_size_inches(14,6)
 
+
 axes[0].plot(signals[0][:, 0], signals[0][:, 1], color='blue', label='vibedata1')
 # axes[0].plot(signal_2[:,0], signal_2[:,1], color='red', label='vibedata2' )
 

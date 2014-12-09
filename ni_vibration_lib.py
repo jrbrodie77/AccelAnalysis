@@ -125,25 +125,15 @@ class DataSeries:
         self.samprate = float((len(self.time_data[0])-1))/(self.time_data[0][-1] - self.time_data[0][0])
 
     def __str__(self):
-        return str.format(" {0}: times({1}), data({2}) ", self.name, len(self.time_data[0]), len(self.time_data[1]))
+        pretty = """.name='{0}'
+ times({1}), data({2}) \n"""
+
+        return str.format(pretty, self.name, len(self.time_data[0]), len(self.time_data[1]))
 
     @property
     def fft_abs(self):
         return np.abs(self.fft_data[1])
 
-def plot_time_data(dataseries, showplot=False):
-
-    if type(dataseries) is not 'list': dataseries = [dataseries]
-
-    fig, ax = py.subplots()
-    ax.set_title("Raw Signal")
-    ax.set_xlabel("time, s")
-    ax.set_ylabel("acceleration, g")
-
-    for ds in dataseries:
-        ax.plot(ds.time_data[0], ds.time_data[1])
-
-    if showplot: py.show()
 
 def plot_time_data(dataseries, showplot=False):
 
@@ -156,8 +146,8 @@ def plot_time_data(dataseries, showplot=False):
 
     for ds in dataseries:
         print(ds)
-        ax.plot(ds.time_data[0], ds.time_data[1])
-
+        ax.plot(ds.time_data[0], ds.time_data[1], label=ds.name)
+    legend = ax.legend(loc='upper center')
     return fig
 
 #a = [3,3,3,3,-3,-3,-3,-3]
@@ -170,6 +160,9 @@ def plot_time_data(dataseries, showplot=False):
 #print(ds2.fft_abs)
 def main():
     dataset=DataSet("vibedata.csv")
+    dataset.data[0].name = "First Meas Column"
+    dataset.data[1].name = "Second Meas Column"
+
     #print(ds.data[0].esd_data[1])
     print(type(dataset.data))
     plot_time_data(dataset.data)
