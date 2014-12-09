@@ -1,7 +1,7 @@
 #### *This spreadsheet* lets the user import vibration data form the NI accelerometer rig and plot.
 
 # Setup the environment
-import pylab as py
+import matplotlib.pyplot as py
 import numpy as np
 import math
 
@@ -78,11 +78,10 @@ def rms(vals):
 class DataSet:
     """DataSet( 'optional filename' )"""
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, verbose=True):
         self.data = []
         self.file_contents = np.array([])
-
-        if filename: self.load_ni_csv_file(filename)
+        if filename: self.load_ni_csv_file(filename, verbose=verbose)
 
     def load_ni_csv_file(self, filename, skiprows=8, verbose=True):
         """This function reads in National Instruments SignalExpress csv files"""
@@ -132,6 +131,34 @@ class DataSeries:
     def fft_abs(self):
         return np.abs(self.fft_data[1])
 
+def plot_time_data(dataseries, showplot=False):
+
+    if type(dataseries) is not 'list': dataseries = [dataseries]
+
+    fig, ax = py.subplots()
+    ax.set_title("Raw Signal")
+    ax.set_xlabel("time, s")
+    ax.set_ylabel("acceleration, g")
+
+    for ds in dataseries:
+        ax.plot(ds.time_data[0], ds.time_data[1])
+
+    if showplot: py.show()
+
+def plot_time_data(dataseries, showplot=False):
+
+    if type(dataseries) != list: dataseries = [dataseries]
+
+    fig, ax = py.subplots()
+    ax.set_title("Raw Signal")
+    ax.set_xlabel("time, s")
+    ax.set_ylabel("acceleration, g")
+
+    for ds in dataseries:
+        print(ds)
+        ax.plot(ds.time_data[0], ds.time_data[1])
+
+    return fig
 
 #a = [3,3,3,3,-3,-3,-3,-3]
 #a = [1,-1,1,-1,1,-1,1,-1]
@@ -142,9 +169,13 @@ class DataSeries:
 
 #print(ds2.fft_abs)
 def main():
-    ds=DataSet("vibedata.csv")
-    print(ds.data[0].esd_data[1])
+    dataset=DataSet("vibedata.csv")
+    #print(ds.data[0].esd_data[1])
+    print(type(dataset.data))
+    plot_time_data(dataset.data)
+    py.show()
 
 
 if __name__ == "__main__":
     main()
+
