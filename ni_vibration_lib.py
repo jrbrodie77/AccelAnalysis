@@ -1,6 +1,3 @@
-#### *This spreadsheet* lets the user import vibration data form the NI accelerometer rig and plot.
-
-# Setup the environment
 import matplotlib.pyplot as py
 import numpy as np
 import math
@@ -32,21 +29,19 @@ def gen_test_tones(freqs=[256], samprate=1024, num_samps=1024):
 
 def linear_bins(low=0, hi=200, inc=5):
     """Returns array of lin. spaced frequency values for binning"""
-    center_freq = np.arange(low, hi, inc)
-    limit_freq = center_freq + inc / 2
-    bin_spec = np.array([center_freq, limit_freq])
+    center_freq = np.arange(low, hi, inc, dtype=float)
+    limit_freq = center_freq + float(inc) / 2
+    bin_spec = (center_freq, limit_freq)
     return bin_spec
 
 
-def calc_esd(fft_data, bin_spec=linear_bins()):
+def calc_spectrum(fft_data, bin_spec=linear_bins()):
     """Takes raw FFT data, returns binned energy spectral density in freq bins"""
 
     freqs = fft_data[0]
     values = np.abs(fft_data[1])**2
-    esd = (freqs, values)
-    esd = bin_spectrum(esd, bin_spec)
-
-    return (freqs, esd)
+    spectrum = (freqs, values)
+    return spectrum
 
 
 def bin_spectrum(freq_data, bin_spec=linear_bins()):
@@ -56,19 +51,19 @@ def bin_spectrum(freq_data, bin_spec=linear_bins()):
     binned_spectrum = {}
 
     for index, bin_num in enumerate(binned_keys):
-        if bin_num < bin_spec.shape[1]:
-            freq = bin_spec[0, bin_num]
+        if bin_num < len(bin_spec[1]):
+            freq = bin_spec[0][bin_num]
             if not binned_spectrum.has_key(freq):
                 binned_spectrum[freq] = 0
 
             binned_spectrum[freq] += freq_data[1][index]
 
     binned_spectrum = np.array([[k, v] for k, v in binned_spectrum.iteritems()])
-    binned_spectrum = binned_spectrum[binned_spectrum[:, 0].argsort()]
+    binned_spectrum = binned_spectrum[binned_spectrum[0].argsort()]
     binned_spectrum = [[v[0], v[1]] for v in binned_spectrum]
     binned_spectrum = np.array(binned_spectrum)
-
-    return binned_spectrum[:][1:]
+    freqs, values = binned_spectrum[0], binned_spectrum[1]
+    return (freqs, values)
 
 
 def rms(vals):
@@ -111,7 +106,7 @@ class DataSeries:
         self.name = ""
         self.time_data = []
         self.fft_data = []
-        self.esd_data = []
+        self.spectrum = []
         if type(times)!='NoneType':
             times, values = np.array(times), np.array(values)
 
@@ -119,7 +114,7 @@ class DataSeries:
             self.time_data=(times, values)
             self.__add_samprate()
             self.fft_data = calc_fft(self.time_data, samprate=self.samprate )
-            self.esd_data = calc_esd(self.fft_data)
+            self.spectrum = calc_spectrum(self.fft_data)
 
     def __add_samprate(self):
         self.samprate = float((len(self.time_data[0])-1))/(self.time_data[0][-1] - self.time_data[0][0])
@@ -145,8 +140,24 @@ def plot_time_data(dataseries, showplot=False):
     ax.set_ylabel("acceleration, g")
 
     for ds in dataseries:
-        print(ds)
         ax.plot(ds.time_data[0], ds.time_data[1], label=ds.name)
+    legend = ax.legend(loc='upper center')
+    return fig
+
+
+def plot_spectrum(dataseries, showplot=False):
+
+    if type(dataseries) != list: dataseries = [dataseries]
+
+    fig, ax = py.subplots()
+    ax.set_title("Spectrum")
+    ax.set_xlabel("freq, Hz")
+    ax.set_ylabel("acceleration, g^2/Hz")
+
+    for ds in dataseries:
+        print(len(ds.spectrum[0]))
+        print(len(ds.spectrum[1]))
+        ax.plot(ds.spectrum[0], ds.spectrum[1], label=ds.name)
     legend = ax.legend(loc='upper center')
     return fig
 
@@ -163,9 +174,10 @@ def main():
     dataset.data[0].name = "First Meas Column"
     dataset.data[1].name = "Second Meas Column"
 
-    #print(ds.data[0].esd_data[1])
+    #print(ds.data[0].spectrum[1])
     print(type(dataset.data))
     plot_time_data(dataset.data)
+    plot_spectrum(dataset.data)
     py.show()
 
 

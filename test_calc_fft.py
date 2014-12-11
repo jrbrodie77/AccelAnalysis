@@ -24,29 +24,21 @@ def gen_test_tones_8():
 
 class TestCalc_fft(unittest.TestCase):
 
-    def test_dc(self):
+    def test_fft_dc(self):
         values = [3, 3, 3, 3, 3, 3, 3, 3]
         times = [0,1,2,3,4,5,6,7]
         fft = ni.calc_fft([times,values], 8)
         self.assertListEqual(fft[0].tolist(), [ 0.0,  1.0,  2.0,  3.0,  4.0], "Frequencies wrong or wrong type")
 
-    def test_gen_test_tones(self):
+    #def test_gen_test_tones(self):
+    #    times, values=ni.gen_test_tones()
 
-        times, values=ni.gen_test_tones()
+    def test_binned_fft(self):
+        values = np.random.random(1024) * 5 - 2.5
+        times  = np.linspace(0,1,1024)
+        dataseries = ni.DataSeries(times,values)
 
 
-
-
-
-
-#a = [3,3,3,3,-3,-3,-3,-3]
-#a = [1,-1,1,-1,1,-1,1,-1]
-#a = [3,3,3,3,3,3,3,3]
-#b= [0,1,2,3,4,5,6,7]
-#ds1=DataSeries(b,a)
-#ds2 = gen_test_tones_8()
-
-#print(ds2.fft_abs)
 
 
 if __name__ == '__main__':
