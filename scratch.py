@@ -15,3 +15,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# How to inherit list
+# class SeriesList(list):
+#     """DataSet( 'optional filename' )"""
+#
+#     def __init__(self, initial_series=None, filename=None, verbose=True):
+#         list.__init__(self, initial_series or [])
+#         if filename: self.load_ni_csv_file(filename, verbose=verbose)
+
