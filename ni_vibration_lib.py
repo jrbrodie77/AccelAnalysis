@@ -137,7 +137,8 @@ def bin_spectrum(freq_series, bin_spec=linear_bins()):
 
     return FreqSeries(bin_spec.center_freqs, np.array(summed_values))
 
-def load_ni_csv_file(filename, skiprows=8, verbose=True):
+
+def load_ni_csv_file(filename, skiprows=8, delimiter=',', verbose=True):
     """This function reads in National Instruments SignalExpress csv files"""
     file_contents = np.loadtxt(filename, skiprows=skiprows, delimiter=',')
     times = file_contents[:, 0]  # Slice first column
@@ -158,6 +159,10 @@ def load_ni_csv_file(filename, skiprows=8, verbose=True):
         series.append(cur_series)
 
     return series
+
+
+def load_ni_txt_file(filename):
+    return load_ni_csv_file(filename, skiprows=22, delimiter='\t')
 
 def main():
     dataset = load_ni_csv_file(filename = "vibedata.csv")

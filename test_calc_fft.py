@@ -48,19 +48,28 @@ class TestCalc_fft(unittest.TestCase):
         values = randn(len(times))
         bin_spec = ni.linear_bins(0,20000,1000)
         series = ni.DataSeries(times, values, bin_spec=bin_spec)
-
+        series.name = "Random Data"
         ni.plot_binned_spec(series)
         ni.plot_time_series(series)
         ni.plot_spectrum(series)
         ni.py.show()
 
 
-
     def test_load_csv(self):
         filename = 'vibedata.csv'
-        series_list = ni.SeriesList(filename = 'vibedata.csv')
-        print(series_list)
+        series = ni.load_ni_csv_file(filename)
+        ni.plot_binned_spec(series)
+        ni.plot_time_series(series)
+        ni.plot_spectrum(series)
+        ni.py.show()
 
+    def test_load_txt(self):
+        filename = 'vibedata.txt'
+        series = ni.load_ni_txt_file(filename)
+        ni.plot_binned_spec(series)
+        ni.plot_time_series(series)
+        ni.plot_spectrum(series)
+        ni.py.show()
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestCalc_fft)
