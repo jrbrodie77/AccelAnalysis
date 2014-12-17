@@ -1,0 +1,28 @@
+Date,12/31/03,12/31/03
+Time,16:00:00,16:00:00
+Y_Unit_Label,Acceleration (g),Acceleration (g)
+X_Dimension,Time (s),Time (s)
+X0,0.00E+00,0.00E+00
+Delta_X,0.000488,0.000488
+***End_of_Header***,,
+X_Value,tapping near accel - sink cntr - Acceleration - platform,tapping near accel - sink cntr - Acceleration - table
+Date,12/31/03,12/31/03
+Time,16:00:00,16:00:00
+Y_Unit_Label,Acceleration (g),Acceleration (g)
+X_Dimension,Time (s),Time (s)
+X0,0.00E+00,0.00E+00
+Delta_X,0.000488,0.000488
+***End_of_Header***,,
+X_Value,tapping near accel - sink cntr - Acceleration - platform,tapping near accel - sink cntr - Acceleration - table
+
+
+
+
+
+
+0	2	1
+0.000488	1	2
+0.000977	2	1
+0.001465	1	2
+0.001953	2	1
+0.002441	1	2
