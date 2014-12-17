@@ -5,21 +5,6 @@ import ni_vibration_lib as ni
 
 __author__ = 'jrbrodie77'
 
-def gen_test_tones_8():
-    """This generates a signal for our test case"""
-    samprate = 8
-    num_samples = 8
-    freqs = [2]
-
-    times = np.arange(0, num_samples) * 1.0 / samprate  #Generate 1 second of time data
-    values = np.zeros(len(u))
-
-    for freq in freqs:
-        y += [math.sin(num * 2 * math.pi * freq) for num in u]  #*2*freq
-
-
-    return (times, values)
-
 
 class TestCalc_fft(unittest.TestCase):
     # def test_fft_dc(self):
@@ -44,33 +29,56 @@ class TestCalc_fft(unittest.TestCase):
     def test_plot_bin_spectrum(self):
         from numpy.random import randn
 
-        times = np.arange(0,10,1/48000)
+        times =  np.arange(0,10,1/48000)
         values = randn(len(times))
         bin_spec = ni.linear_bins(0,20000,1000)
         series = ni.DataSeries(times, values, bin_spec=bin_spec)
         series.name = "Random Data"
-        ni.plot_binned_spec(series)
-        ni.plot_time_series(series)
-        ni.plot_spectrum(series)
-        ni.py.show()
+        # ni.plot_binned_spec(series)
+        # ni.plot_time_series(series)
+        # ni.plot_spectrum(series)
+        # ni.py.show()
 
 
     def test_load_csv(self):
         filename = 'vibedata.csv'
-        series = ni.load_ni_csv_file(filename)
-        ni.plot_binned_spec(series)
-        ni.plot_time_series(series)
-        ni.plot_spectrum(series)
+        series_list = ni.load_ni_csv_file(filename)
+        # ni.plot_binned_spec(series)
+        # ni.plot_time_series(series)
+        ni.plot_spectrum(series_list)
         ni.py.show()
 
     def test_load_txt(self):
         filename = 'vibedata.txt'
-        series = ni.load_ni_txt_file(filename)
-        ni.plot_binned_spec(series)
-        ni.plot_time_series(series)
-        ni.plot_spectrum(series)
+        series_list = ni.load_ni_txt_file(filename)
+        # ni.plot_binned_spec(series_list)
+        # ni.plot_time_series(series_list)
+        # ni.plot_spectrum(series_list)
+        # ni.py.show()
+
+    def test_tf(self):
+        # filename = 'vibedata.txt'
+        # series_list = ni.load_ni_txt_file(filename)
+        #
+        filename = 'vibedata.csv'
+        series_list = ni.load_ni_csv_file(filename)
+        series_list[0].calc_tf(series_list[1])
+        print(series_list[0].tf)
+        ni.plot_tf(series_list[0])
         ni.py.show()
+
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestCalc_fft)
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+
+def gen_test_tones(freqs=[256], samprate=1024, num_samps=1024):
+    """This generates a signal for our test case"""
+    times = np.arange(0, num_samps) * 1.0 / samprate
+    values = np.zeros(num_samps)
+
+    for freq in freqs:
+        values += [math.cos(num * 2 * math.pi * freq) for num in times]  #*2*freq
+
+    return (times, values)

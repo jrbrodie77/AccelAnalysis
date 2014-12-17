@@ -4,19 +4,22 @@ import math
 import collections
 
 
-# namedtuple returns a class definition
+# Creating subclasses of namedtuple
 FreqSeries = collections.namedtuple('FreqSeries', ['freqs', 'values'])
 TimeSeries = collections.namedtuple('TimeSeries', ['times', 'values'])
 BinSpec = collections.namedtuple('BinSpec', ['center_freqs', 'limit_freqs'])
 
 def linear_bins(low=0, hi=200, inc=5):
-    """Returns array of lin. spaced frequency values for binning"""
+    """Returns BinSpec instance that specifies center and bandlimit freqs"""
     center_freqs = np.arange(low, hi, inc)
     limit_freqs = center_freqs + inc / 2
 
     return BinSpec(center_freqs, limit_freqs)
 
 class DataSeries:
+    """Container object, initialized with time series data, also
+    calculates FFT, spectrum, PSD, transfer function"""
+
     def __init__(self, times=None, values=None, name="", bin_spec=linear_bins()):
         self.name = name
         if type(times) is not None:
@@ -43,12 +46,15 @@ class DataSeries:
 
         return str.format(pretty, self.name, len(self.time_series.times), len(self.time_series.values))
 
-    @property
-    def fft_abs(self):
-        return np.abs(self.fft_series[1])
+    def calc_tf(self, ref_series):
+        tf = self.fft_series.values / (ref_series.fft_series.values+1e-15)
+        freqs = self.fft_series.freqs
+        self.tf = FreqSeries(freqs, tf)
 
+        return self.tf
 
 def plot_time_series(series, showplot=False):
+    """plot_time_series( <DataSeries object>, <showplot=True/False> )"""
 
     if type(series) is not list: #for the case that a single series is passed
         series = [series]
@@ -64,6 +70,7 @@ def plot_time_series(series, showplot=False):
     return fig
 
 def plot_spectrum(series, showplot=False):
+    """plot_spectrum( <DataSeries object>, <showplot=True/False> )"""
 
     if type(series) is not list: series = [series]
 
@@ -78,7 +85,7 @@ def plot_spectrum(series, showplot=False):
     return fig
 
 def plot_binned_spec(series, showplot=False):
-
+    """plot_binned_spec( <DataSeries object>, <showplot=True/False> )"""
     if type(series) is not list: series = [series]
 
     fig, ax = py.subplots()
@@ -90,6 +97,37 @@ def plot_binned_spec(series, showplot=False):
         ax.plot(ds.binned_spec.freqs, ds.binned_spec.values, label=ds.name)
     legend = ax.legend(loc='upper center')
     return fig
+
+
+def plot_tf(series, showplot=False):
+    """plot_tf( <DataSeries object w/ tf>, <showplot=True/False> )"""
+    if type(series) is not list: series = [series]
+
+    fig, ax1 = py.subplots()
+    ax1.set_title("Transfer Function")
+    ax1.set_xlabel("freq, Hz")
+    ax1.set_ylabel("unitless")
+
+    ax1.set_xlim([0,100])
+
+    ax2 = ax1.twinx()
+    ax2.set_ylim([-180,180])
+    ax1.set_xlim([0,100])
+
+    ax2.set_ylabel('phase(deg)', color='r')
+    for tl in ax2.get_yticklabels():
+        tl.set_color('r')
+
+    for ds in series:
+        angles = np.angle(ds.tf.values, deg=True)
+        mags = np.abs(ds.tf.values)
+        ax1.plot(ds.tf.freqs, mags, label=ds.name)
+        ax2.plot(ds.tf.freqs, angles, label=ds.name, color='r')
+        legend = ax1.legend(loc='upper center')
+
+    if showplot: py.show()
+    return fig
+
 
 def calc_fft(time_series, samprate=1):
 
@@ -104,23 +142,11 @@ def calc_fft(time_series, samprate=1):
 
     return FreqSeries(freqs, fft)
 
-
-
 def calc_spectrum(fft_series, bin_spec=linear_bins()):
     """Takes raw FFT data, returns binned energy spectral density in freq bins"""
     values = np.abs(fft_series.values)**2
     spectrum = FreqSeries(fft_series.freqs, values)
     return spectrum
-
-def gen_test_tones(freqs=[256], samprate=1024, num_samps=1024):
-    """This generates a signal for our test case"""
-    times = np.arange(0, num_samps) * 1.0 / samprate
-    values = np.zeros(num_samps)
-
-    for freq in freqs:
-        values += [math.cos(num * 2 * math.pi * freq) for num in times]  #*2*freq
-
-    return (times, values)
 
 def bin_spectrum(freq_series, bin_spec=linear_bins()):
     """Sums values according to frequency bin"""
@@ -137,10 +163,10 @@ def bin_spectrum(freq_series, bin_spec=linear_bins()):
 
     return FreqSeries(bin_spec.center_freqs, np.array(summed_values))
 
-
 def load_ni_csv_file(filename, skiprows=8, delimiter=',', verbose=True):
     """This function reads in National Instruments SignalExpress csv files"""
-    file_contents = np.loadtxt(filename, skiprows=skiprows, delimiter=',')
+
+    file_contents = np.loadtxt(filename, skiprows=skiprows, delimiter=delimiter)
     times = file_contents[:, 0]  # Slice first column
     num_cols = file_contents.shape[1]
 
@@ -151,18 +177,19 @@ def load_ni_csv_file(filename, skiprows=8, delimiter=',', verbose=True):
         print(" First row of data: ", file_contents[0, :])
         print(" num cols:" + str(num_cols))
 
-    series = []
+    series_list = []
 
     for col in range(1, num_cols):
         cur_series = DataSeries(times=times, values=file_contents[:,col])
         cur_series.name = "Series" + str(col)
-        series.append(cur_series)
+        series_list.append(cur_series)
 
-    return series
+    return series_list
 
 
 def load_ni_txt_file(filename):
     return load_ni_csv_file(filename, skiprows=22, delimiter='\t')
+
 
 def main():
     dataset = load_ni_csv_file(filename = "vibedata.csv")
