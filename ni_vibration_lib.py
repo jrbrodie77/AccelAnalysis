@@ -103,27 +103,27 @@ def plot_tf(series, showplot=False):
     """plot_tf( <DataSeries object w/ tf>, <showplot=True/False> )"""
     if type(series) is not list: series = [series]
 
-    fig, ax1 = py.subplots()
-    ax1.set_title("Transfer Function")
-    ax1.set_xlabel("freq, Hz")
-    ax1.set_ylabel("unitless")
+    fig, ax = py.subplots(2,1)
+    ax[0].set_title("Transfer Function")
+    ax[0].set_xlabel("freq, Hz")
+    ax[0].set_ylabel("dB")
+    ax[0].set_xlim([0,100])
+    ax[0].set_ylim([0,50])
 
-    ax1.set_xlim([0,100])
 
-    ax2 = ax1.twinx()
-    ax2.set_ylim([-180,180])
-    ax1.set_xlim([0,100])
+    ax[1].set_ylim([-180,180])
+    ax[1].set_xlim([0,100])
 
-    ax2.set_ylabel('phase(deg)', color='r')
-    for tl in ax2.get_yticklabels():
+    ax[1].set_ylabel('phase(deg)', color='r')
+    for tl in ax[1].get_yticklabels():
         tl.set_color('r')
 
     for ds in series:
         angles = np.angle(ds.tf.values, deg=True)
-        mags = np.abs(ds.tf.values)
-        ax1.plot(ds.tf.freqs, mags, label=ds.name)
-        ax2.plot(ds.tf.freqs, angles, label=ds.name, color='r')
-        legend = ax1.legend(loc='upper center')
+        mags = 20*np.log10(np.abs(ds.tf.values))
+        ax[0].plot(ds.tf.freqs, mags, label=ds.name)
+        ax[1].plot(ds.tf.freqs, angles, label=ds.name, color='r')
+        legend = ax[0].legend(loc='upper center')
 
     if showplot: py.show()
     return fig
