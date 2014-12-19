@@ -1,10 +1,9 @@
 from unittest import TestCase
 import unittest
 import numpy as np
-import ni_vibration_lib as ni
+import vibes as ni
 
 __author__ = 'jrbrodie77'
-
 
 class TestCalc_fft(unittest.TestCase):
     # def test_fft_dc(self):
@@ -45,26 +44,26 @@ class TestCalc_fft(unittest.TestCase):
         series_list = ni.load_ni_csv_file(filename)
         # ni.plot_binned_spec(series)
         # ni.plot_time_series(series)
-        ni.plot_spectrum(series_list)
-        ni.py.show()
-
-    def test_load_txt(self):
-        filename = 'vibedata.txt'
-        series_list = ni.load_ni_txt_file(filename)
-        # ni.plot_binned_spec(series_list)
-        # ni.plot_time_series(series_list)
         # ni.plot_spectrum(series_list)
         # ni.py.show()
+
+    def test_load_txt(self):
+        filename = './sj pick 4.txt'
+        series_list = ni.load_ni_txt_file(filename)
+        ni.plot_binned_spec(series_list)
+        ni.plot_time_series(series_list)
+        ni.plot_spectrum(series_list)
+        ni.py.show()
 
     def test_tf(self):
         # filename = 'vibedata.txt'
         # series_list = ni.load_ni_txt_file(filename)
         #
-        filename = 'vibedata.csv'
-        series_list = ni.load_ni_csv_file(filename)
-        series_list[0].calc_tf(series_list[1])
-        print(series_list[0].tf)
-        ni.plot_tf(series_list[0])
+        filename = './sj pick 4.txt'
+        series_list = ni.load_ni_txt_file(filename)
+        series_list[1].calc_tf(series_list[0])
+        print(series_list[1].tf)
+        ni.plot_tf(series_list[1], xlim=[0,200])
         ni.py.show()
 
 

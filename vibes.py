@@ -1,8 +1,27 @@
+"""Vibes.py - Vibration Data Module
+
+This module provides a class called DataSeries for containing time and frequency data from
+vibration or acoustics measurements.
+
+  Example:
+    filename = 'shelf_inverted.txt'
+    data_columns = vibes.load_ni_txt_file(filename)
+
+    # Set name of each column and plot graph
+    data_columns[0].name = "On table"
+    data_columns[0].color = "red"   # blue, green, red, cyan, magenta, yellow, black, white
+
+    data_columns[1].name = "Above load cell"
+    data_columns[1].color = "grey"
+
+    plt1 = vibes.plot_time_series(data_columns)
+    py.show()  #Show plots
+"""
+
 import matplotlib.pyplot as py
 import numpy as np
 import math
 import collections
-
 
 # Creating subclasses of namedtuple
 FreqSeries = collections.namedtuple('FreqSeries', ['freqs', 'values'])
@@ -31,6 +50,7 @@ class DataSeries:
                 self.fft_series = calc_fft(self.time_series, samprate=self.samprate )
                 self.spectrum = calc_spectrum(self.fft_series)
                 self.binned_spec = bin_spectrum(self.spectrum, bin_spec)
+                self.color = None  # blue, green, red, cyan, magenta, yellow, black, white
 
     def __add_samprate(self):
         num_samples = len(self.time_series.times)
@@ -53,66 +73,84 @@ class DataSeries:
 
         return self.tf
 
-def plot_time_series(series, showplot=False):
+def plot_time_series(series, showplot=False, xlim = None, ylim = None ):
     """plot_time_series( <DataSeries object>, <showplot=True/False> )"""
 
     if type(series) is not list: #for the case that a single series is passed
         series = [series]
 
-    fig, ax = py.subplots()
-    ax.set_title("Raw Signal")
+    fig, ax = py.subplots(figsize=[8,6])
+    ax.set_title("Time Series")
     ax.set_xlabel("time, s")
     ax.set_ylabel("acceleration, g")
+    if xlim is not None: ax.set_xlim(xlim)
+    if ylim is not None: ax.set_ylim(ylim)
 
     for ds in series:
-        ax.plot(ds.time_series.times, ds.time_series.values, label=ds.name)
-    legend = ax.legend(loc='upper center')
-    return fig
+        if ds.color:
+            ax.plot(ds.time_series.times, ds.time_series.values, label=ds.name, color=ds.color)
+        else:
+            ax.plot(ds.time_series.times, ds.time_series.values, label=ds.name)
 
-def plot_spectrum(series, showplot=False):
+    legend = ax.legend()
+    return fig, ax
+
+def plot_spectrum(series, showplot=False, xlim = None, ylim = None ):
     """plot_spectrum( <DataSeries object>, <showplot=True/False> )"""
 
     if type(series) is not list: series = [series]
 
-    fig, ax = py.subplots()
+    fig, ax = py.subplots(figsize=[8,6])
     ax.set_title("Spectrum")
     ax.set_xlabel("freq, Hz")
     ax.set_ylabel("acceleration, g^2/Hz")
+    ax.set_yscale('log')
+    if xlim is not None: ax.set_xlim(xlim)
+    if ylim is not None: ax.set_ylim(ylim)
 
     for ds in series:
-        ax.plot(ds.spectrum.freqs, ds.spectrum.values, label=ds.name)
-    legend = ax.legend(loc='upper center')
-    return fig
+        if ds.color:
+            ax.plot(ds.spectrum.freqs, ds.spectrum.values, label=ds.name, color=ds.color)
+        else:
+            ax.plot(ds.spectrum.freqs, ds.spectrum.values, label=ds.name)
 
-def plot_binned_spec(series, showplot=False):
+    legend = ax.legend()
+    return fig, ax
+
+def plot_binned_spectrum(series, showplot=False, xlim = None, ylim = None ):
     """plot_binned_spec( <DataSeries object>, <showplot=True/False> )"""
     if type(series) is not list: series = [series]
 
-    fig, ax = py.subplots()
+    fig, ax = py.subplots(figsize=[8,6])
     ax.set_title("Binned Spectrum")
     ax.set_xlabel("freq, Hz")
     ax.set_ylabel("acceleration, g^2/Hz")
+    ax.set_yscale('log')
+    if xlim is not None: ax.set_xlim(xlim)
+    if ylim is not None: ax.set_ylim(ylim)
 
     for ds in series:
-        ax.plot(ds.binned_spec.freqs, ds.binned_spec.values, label=ds.name)
-    legend = ax.legend(loc='upper center')
-    return fig
+        if ds.color:
+            ax.plot(ds.binned_spec.freqs, ds.binned_spec.values, label=ds.name, color=ds.color)
+        else:
+            ax.plot(ds.binned_spec.freqs, ds.binned_spec.values, label=ds.name)
 
+    legend = ax.legend()
+    return fig, ax
 
-def plot_tf(series, showplot=False):
+def plot_tf(series, showplot=False, xlim = None, ylim = None):
     """plot_tf( <DataSeries object w/ tf>, <showplot=True/False> )"""
     if type(series) is not list: series = [series]
 
-    fig, ax = py.subplots(2,1)
+    fig, ax = py.subplots(2,1, figsize=[8,12])
     ax[0].set_title("Transfer Function")
     ax[0].set_xlabel("freq, Hz")
     ax[0].set_ylabel("dB")
-    ax[0].set_xlim([0,100])
-    ax[0].set_ylim([0,50])
-
+    if xlim is not None: ax[0].set_xlim(xlim)
+    if ylim is not None: ax[0].set_ylim(ylim)
 
     ax[1].set_ylim([-180,180])
-    ax[1].set_xlim([0,100])
+    if xlim is not None: ax[1].set_xlim(xlim)
 
     ax[1].set_ylabel('phase(deg)', color='r')
     for tl in ax[1].get_yticklabels():
@@ -123,11 +161,11 @@ def plot_tf(series, showplot=False):
         mags = 20*np.log10(np.abs(ds.tf.values))
         ax[0].plot(ds.tf.freqs, mags, label=ds.name)
         ax[1].plot(ds.tf.freqs, angles, label=ds.name, color='r')
-        legend = ax[0].legend(loc='upper center')
+        legend = ax[0].legend()
 
     if showplot: py.show()
-    return fig
 
+    return fig, ax
 
 def calc_fft(time_series, samprate=1):
 
@@ -163,7 +201,7 @@ def bin_spectrum(freq_series, bin_spec=linear_bins()):
 
     return FreqSeries(bin_spec.center_freqs, np.array(summed_values))
 
-def load_ni_csv_file(filename, skiprows=8, delimiter=',', verbose=True):
+def load_ni_csv_file(filename, skiprows=8, delimiter=',', verbose=False):
     """This function reads in National Instruments SignalExpress csv files"""
 
     file_contents = np.loadtxt(filename, skiprows=skiprows, delimiter=delimiter)
@@ -171,11 +209,11 @@ def load_ni_csv_file(filename, skiprows=8, delimiter=',', verbose=True):
     num_cols = file_contents.shape[1]
 
     if verbose:
-        print(str.format("Verbose mode:\n Skipping {s} rows as header", s=skiprows))
-        print(" Opening: " + filename)
+        print(" \nOpening: " + filename)
         print(str.format(" Read {shape} array of data", shape=file_contents.shape))
+        print(" number of columns:" + str(num_cols))
         print(" First row of data: ", file_contents[0, :])
-        print(" num cols:" + str(num_cols))
+
 
     series_list = []
 
@@ -186,15 +224,11 @@ def load_ni_csv_file(filename, skiprows=8, delimiter=',', verbose=True):
 
     return series_list
 
-
 def load_ni_txt_file(filename):
     return load_ni_csv_file(filename, skiprows=22, delimiter='\t')
 
-
 def main():
     dataset = load_ni_csv_file(filename = "vibedata.csv")
-
-
     dataset[0].name = "First Meas Column"
     dataset[1].name = "Second Meas Column"
 
