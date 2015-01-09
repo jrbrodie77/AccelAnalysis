@@ -21,7 +21,12 @@ vibration or acoustics measurements.
 import matplotlib.pyplot as py
 import numpy as np
 import math
+import sys
 import collections
+
+if sys.version_info.major!=3 or sys.version_info.minor!=4:
+    print("Wrong python version, use 3.4")
+    raise
 
 # Creating subclasses of namedtuple
 FreqSeries = collections.namedtuple('FreqSeries', ['freqs', 'values'])
@@ -118,7 +123,7 @@ def plot_spectrum(series, showplot=False, xlim = None, ylim = None ):
     return fig, ax
 
 def plot_binned_spectrum(series, showplot=False, xlim = None, ylim = None ):
-    """plot_binned_spec( <DataSeries object>, <showplot=True/False> )"""
+    """plot_binned_spectrum( <DataSeries object>, <showplot=True/False> )"""
     if type(series) is not list: series = [series]
 
     fig, ax = py.subplots(figsize=[8,6])
@@ -227,6 +232,47 @@ def load_ni_csv_file(filename, skiprows=8, delimiter=',', verbose=False):
 def load_ni_txt_file(filename):
     return load_ni_csv_file(filename, skiprows=22, delimiter='\t')
 
+def load_1col_txt_file(filename, skiprows=7, dtrow = 5, delimiter=',', verbose=False):
+    """This function reads in National Instruments SignalExpress csv files"""
+
+    dt = 0.0  #sample interval
+
+    fp = open(filename)
+    for i, line in enumerate(fp):
+        if i == dtrow:
+            dt = float(line)
+        elif i > dtrow:
+            break
+    fp.close()
+
+    if dt == 0.0:
+        raise "Expected dt on 7th line of file, got" + str(dt)
+
+    file_contents = np.loadtxt(filename, skiprows=skiprows, delimiter=delimiter)
+
+    if len(file_contents.shape)==1:  #deal with single column array
+            file_contents = np.array( [file_contents] ).T
+
+    num_rows = file_contents.shape[0]
+    num_cols = file_contents.shape[1]
+    times = np.arange(num_rows)*dt
+
+    if verbose:
+        print(" \nOpening: " + filename)
+        print(str.format(" Read {shape} array of data", shape=file_contents.shape))
+        print(" number of columns:" + str(num_cols))
+        print(" First row of data: ", file_contents[0, :])
+
+    series_list = []
+
+    for col in range(0, num_cols):
+        cur_series = DataSeries(times=times, values=file_contents[:,col])
+        cur_series.name = "Series" + str(col)
+        series_list.append(cur_series)
+
+    return series_list
+
+
 def main():
     dataset = load_ni_csv_file(filename = "vibedata.csv")
     dataset[0].name = "First Meas Column"
@@ -234,7 +280,7 @@ def main():
 
     plot_time_series(dataset)
     plot_spectrum(dataset)
-    plot_binned_spec(dataset)
+    plot_binned_spectrum(dataset)
     py.show()
 
 
